@@ -45,7 +45,7 @@ public class App
 
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(8082), 0);
-            server.createContext("/read", new ReadHandler());
+            server.createContext("/read_table", new ReadTableHandler());
             server.createContext("/create_table", new CreateTableHandler());  
             server.createContext("/delete_flashcard/", new DeleteFlashcardHandler()); 
             server.createContext("/delete_table/", new DeleteTableHandler());
@@ -61,7 +61,7 @@ public class App
 
 
 
-    static class ReadHandler implements HttpHandler {
+    static class ReadTableHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
         
