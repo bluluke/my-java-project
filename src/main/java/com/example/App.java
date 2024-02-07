@@ -59,78 +59,66 @@ public class App
         }
     }
 
-
-
     static class ReadTableHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-        
             String uri = exchange.getRequestURI().toString();
             String[] uriParts = uri.split("/");
-            String tableName = uriParts[uriParts.length - 1]; 
-
-
+            String tableName = uriParts[uriParts.length - 1];
+    
             try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
-      
                 String sql = "SELECT * FROM " + tableName;
-                // ...
-
                 try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
-                ResultSet resultSet = preparedStatement.executeQuery()) {
-
-                    
-                String jsonResponse = convertResultSetToJson(resultSet);
-     
-                exchange.sendResponseHeaders(200, jsonResponse.length());
-                try (OutputStream os = exchange.getResponseBody()) {
-                    os.write(jsonResponse.getBytes());
-                }
+                     ResultSet resultSet = preparedStatement.executeQuery()) {
+    
+                    String jsonResponse = convertResultSetToJson(resultSet);
+    
+                    exchange.getResponseHeaders().set("Content-Type", "application/json");
+                    exchange.sendResponseHeaders(200, jsonResponse.getBytes().length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(jsonResponse.getBytes());
+                    }
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
-                exchange.sendResponseHeaders(500, 0);  
+                exchange.sendResponseHeaders(500, 0);
             }
         }
-
-
-     private String convertResultSetToJson(ResultSet resultSet) throws SQLException {
-        StringBuilder response = new StringBuilder();
-        response.append("[");
     
-
-        while (resultSet.next()) {
-            ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
-            int columnCount = resultSetMetaData.getColumnCount();
+        private String convertResultSetToJson(ResultSet resultSet) throws SQLException {
+            StringBuilder response = new StringBuilder();
+            response.append("[");
     
-            response.append("{");
+            while (resultSet.next()) {
+                ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
+                int columnCount = resultSetMetaData.getColumnCount();
     
-            for (int i = 1; i <= columnCount; i++) {
-                String columnName = resultSetMetaData.getColumnName(i);
-                Object value = resultSet.getObject(i);
+                response.append("{");
     
-                response.append("\"").append(columnName).append("\":\"").append(value).append("\",");
+                for (int i = 1; i <= columnCount; i++) {
+                    String columnName = resultSetMetaData.getColumnName(i);
+                    Object value = resultSet.getObject(i);
+    
+                    response.append("\"").append(columnName).append("\":\"").append(value).append("\",");
+                }
+    
+                if (columnCount > 0) {
+                    response.deleteCharAt(response.length() - 1);
+                }
+    
+                response.append("},");
             }
     
-
-            if (columnCount > 0) {
+            if (response.length() > 1) {
                 response.deleteCharAt(response.length() - 1);
             }
     
-            response.append("},");
+            response.append("]");
+    
+            return response.toString();
         }
-    
-        if (response.length() > 1) {
-            response.deleteCharAt(response.length() - 1);
-        }
-    
-        response.append("]");
-
-    
-        return response.toString();
     }
     
-    }
-
     static class CreateTableHandler implements HttpHandler {
         @Override 
         public void handle(HttpExchange exchange) throws IOException {
