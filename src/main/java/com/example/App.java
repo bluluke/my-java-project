@@ -48,6 +48,7 @@ public class App
             server.createContext("/hello", new MyHandler());
             server.createContext("/read", new ReadHandler());
             server.createContext("/create", new CreateHandler());   
+            server.createContext("/add_flashcard/", new AddFlashcardHandler());
             server.start();
             System.out.println("Server started on port 8082");
         } catch (IOException e) {
@@ -183,5 +184,62 @@ public class App
             }
         }
     }
+
+    static class AddFlashcardHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("POST".equals(exchange.getRequestMethod())) {
+                try {
+                 
+                    String[] pathParts = exchange.getRequestURI().getPath().split("/");
+                    String tableName = pathParts[pathParts.length - 1]; 
+                    
+                    
+                    InputStream requestBody = exchange.getRequestBody();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody));
+                    StringBuilder requestBodyContent = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        requestBodyContent.append(line);
+                    }
+                    
+                   
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    JsonNode requestData = objectMapper.readTree(requestBodyContent.toString());
+                    
+                    
+                    String question = requestData.get("question").asText();
+                    String answer = requestData.get("answer").asText();
+                    
+                   
+                    try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
+                        
+                        String sql = "INSERT INTO " + tableName + " (question, answer) VALUES (?, ?)";
+                        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                            preparedStatement.setString(1, question);
+                            preparedStatement.setString(2, answer);
+                            preparedStatement.executeUpdate();
+                        }
+                        
+                     
+                        String response = "{\"status\": \"success\", \"message\": \"Flashcard added successfully.\"}";
+                        exchange.sendResponseHeaders(200, response.getBytes().length);
+                        try (OutputStream os = exchange.getResponseBody()) {
+                            os.write(response.getBytes());
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        exchange.sendResponseHeaders(500, 0);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    exchange.sendResponseHeaders(400, 0);
+                }
+            }
+        }
+    }
+    
+
+    
     }
 
