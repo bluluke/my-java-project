@@ -276,6 +276,11 @@ public class App
                 try {
                     String[] pathParts = exchange.getRequestURI().getPath().split("/");
                     String tableName = pathParts[pathParts.length - 1];
+
+                    if (!isValidTableName(tableName)) {
+                        exchange.sendResponseHeaders(400, 0); 
+                        return;
+                    }
     
                     try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
                         String sql = "DROP TABLE IF EXISTS " + tableName;
@@ -296,6 +301,10 @@ public class App
                     exchange.sendResponseHeaders(400, 0);
                 }
             }
+        }
+        private boolean isValidTableName(String tableName) {
+            String regex = "^[a-zA-Z0-9_]*$";
+            return tableName.matches(regex);
         }
     }
     
