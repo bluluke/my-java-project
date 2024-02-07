@@ -48,7 +48,7 @@ public class App
             server.createContext("/hello", new MyHandler());
             server.createContext("/read", new ReadHandler());
             server.createContext("/create", new CreateHandler());  
-            server.createContext("/delete_flashcard/football_flashcards", new DeleteFlashcardHandler()); 
+            server.createContext("/delete_flashcard/", new DeleteFlashcardHandler()); 
             server.createContext("/delete_table/", new DeleteTableHandler());
             server.createContext("/add_flashcard/", new AddFlashcardHandler());
             server.start();
