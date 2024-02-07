@@ -51,6 +51,8 @@ public class App
             server.createContext("/delete_flashcard/", new DeleteFlashcardHandler()); 
             server.createContext("/delete_table/", new DeleteTableHandler());
             server.createContext("/add_flashcard/", new AddFlashcardHandler());
+            server.createContext("/edit_flashcard/", new EditFlashcardHandler());
+
             server.start();
             System.out.println("Server started on port 8082");
         } catch (IOException e) {
@@ -299,5 +301,57 @@ public class App
         }
     }
     
+    static class EditFlashcardHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("PATCH".equals(exchange.getRequestMethod())) {
+                try {
+
+                    String[] pathParts = exchange.getRequestURI().getPath().split("/");
+                    String tableName = pathParts[pathParts.length - 2];
+                    int flashcardId = Integer.parseInt(pathParts[pathParts.length - 1]);
+
+                    InputStream requestBody = exchange.getRequestBody();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody));
+                    StringBuilder requestBodyContent = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        requestBodyContent.append(line);
+                    }
+    
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    JsonNode requestData = objectMapper.readTree(requestBodyContent.toString());
+                    String updatedQuestion = requestData.get("question").asText();
+                    String updatedAnswer = requestData.get("answer").asText();
+    
+                    try (Connection connection = DriverManager.getConnection(App.jdbcUrl, App.username, App.password)) {
+                        String sql = "UPDATE " + tableName + " SET question = ?, answer = ? WHERE id = ?";
+                        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                            preparedStatement.setString(1, updatedQuestion);
+                            preparedStatement.setString(2, updatedAnswer);
+                            preparedStatement.setInt(3, flashcardId);
+                            int rowsAffected = preparedStatement.executeUpdate();
+
+                            if (rowsAffected > 0) {
+                                String response = "{\"status\": \"success\", \"message\": \"Flashcard updated successfully.\"}";
+                                exchange.sendResponseHeaders(200, response.getBytes().length);
+                                try (OutputStream os = exchange.getResponseBody()) {
+                                    os.write(response.getBytes());
+                                }
+                            } else {
+                                exchange.sendResponseHeaders(404, 0); 
+                            }
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        exchange.sendResponseHeaders(500, 0); 
+                    }
+                } catch (NumberFormatException e) {
+                    exchange.sendResponseHeaders(400, 0); 
+                }
+            }
+        }
+
     }
+}
 
