@@ -46,7 +46,7 @@ public class App
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(8082), 0);
             server.createContext("/read", new ReadHandler());
-            server.createContext("/create", new CreateHandler());  
+            server.createContext("/create_table", new CreateTableHandler());  
             server.createContext("/delete_flashcard/", new DeleteFlashcardHandler()); 
             server.createContext("/delete_table/", new DeleteTableHandler());
             server.createContext("/add_flashcard/", new AddFlashcardHandler());
@@ -131,7 +131,7 @@ public class App
     
     }
 
-    static class CreateHandler implements HttpHandler {
+    static class CreateTableHandler implements HttpHandler {
         @Override 
         public void handle(HttpExchange exchange) throws IOException {
             if ("POST".equals(exchange.getRequestMethod())) {
