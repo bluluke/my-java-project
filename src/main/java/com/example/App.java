@@ -45,7 +45,6 @@ public class App
 
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(8082), 0);
-            server.createContext("/hello", new MyHandler());
             server.createContext("/read", new ReadHandler());
             server.createContext("/create", new CreateHandler());  
             server.createContext("/delete_flashcard/", new DeleteFlashcardHandler()); 
@@ -60,15 +59,7 @@ public class App
         }
     }
 
-    static class MyHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            String response = "Hello, world!";
-            exchange.sendResponseHeaders(200, response.length());
-            exchange.getResponseBody().write(response.getBytes());
-            exchange.close();
-        }
-    }
+
 
     static class ReadHandler implements HttpHandler {
         @Override
