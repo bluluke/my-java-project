@@ -48,7 +48,8 @@ public class App
             server.createContext("/hello", new MyHandler());
             server.createContext("/read", new ReadHandler());
             server.createContext("/create", new CreateHandler());  
-            server.createContext("/delete_flashcard/football_flashcards/", new DeleteFlashcardHandler()); 
+            server.createContext("/delete_flashcard/football_flashcards", new DeleteFlashcardHandler()); 
+            server.createContext("/delete_table/", new DeleteTableHandler());
             server.createContext("/add_flashcard/", new AddFlashcardHandler());
             server.start();
             System.out.println("Server started on port 8082");
@@ -276,6 +277,35 @@ public class App
         }
     }
     
+    static class DeleteTableHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("DELETE".equals(exchange.getRequestMethod())) {
+                try {
+                    String[] pathParts = exchange.getRequestURI().getPath().split("/");
+                    String tableName = pathParts[pathParts.length - 1];
+    
+                    try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
+                        String sql = "DROP TABLE IF EXISTS " + tableName;
+                        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                            preparedStatement.executeUpdate();
+    
+                            String response = "{\"status\": \"success\", \"message\": \"Table deleted successfully.\"}";
+                            exchange.sendResponseHeaders(200, response.getBytes().length);
+                            try (OutputStream os = exchange.getResponseBody()) {
+                                os.write(response.getBytes());
+                            }
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        exchange.sendResponseHeaders(500, 0);
+                    }
+                } catch (Exception e) {
+                    exchange.sendResponseHeaders(400, 0);
+                }
+            }
+        }
+    }
     
     }
 
