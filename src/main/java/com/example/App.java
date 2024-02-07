@@ -18,7 +18,6 @@ import java.util.Properties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpExchange;
@@ -221,8 +220,20 @@ public class App
                 try {
                     String[] pathParts = exchange.getRequestURI().getPath().split("/");
                     String tableName = pathParts[pathParts.length - 2];
-                    int flashcardId = Integer.parseInt(pathParts[pathParts.length - 1]);
+                    int flashcardId;
                     
+                    try {
+                        flashcardId = Integer.parseInt(pathParts[pathParts.length - 1]);
+                    } catch (NumberFormatException e) {
+                        exchange.sendResponseHeaders(400, 0);
+                        return;
+                    }
+                    
+                    if (!isValidTableName(tableName)) {
+                        exchange.sendResponseHeaders(400, 0);
+                        return;
+                    }
+    
                     try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
                         String sql = "DELETE FROM " + tableName + " WHERE id = ?";
                         try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
@@ -243,13 +254,21 @@ public class App
                         e.printStackTrace();
                         exchange.sendResponseHeaders(500, 0);
                     }
-                } catch (NumberFormatException e) {
-                    exchange.sendResponseHeaders(400, 0);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    exchange.sendResponseHeaders(500, 0);
                 }
             }
         }
-    }
     
+
+        private boolean isValidTableName(String tableName) {
+            String regex = "^[a-zA-Z0-9_]*$";
+            return tableName.matches(regex);
+        }
+        
+    }
+
     static class DeleteTableHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
