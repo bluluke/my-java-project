@@ -141,48 +141,40 @@ public class App
     static class CreateHandler implements HttpHandler {
         @Override 
         public void handle(HttpExchange exchange) throws IOException {
-            if("POST".equals(exchange.getRequestMethod())) {
+            if ("POST".equals(exchange.getRequestMethod())) {
                 try {
-                    // Extract data from the request body
                     InputStream requestBody = exchange.getRequestBody();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody));
-                    String line;
                     StringBuilder requestBodyContent = new StringBuilder();
+                    String line;
                     while ((line = reader.readLine()) != null) {
                         requestBodyContent.append(line);
                     }
                     ObjectMapper objectMapper = new ObjectMapper();
                     JsonNode requestData = objectMapper.readTree(requestBodyContent.toString());
                     String newName = requestData.get("flash_cards_name").asText();
-                    
 
-                
-                    // This establishes the connection with the database
-                try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
-                    
-                    String sql = "CREATE TABLE " + newName + " (id INT PRIMARY KEY, name VARCHAR(255))";
-                    try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                        preparedStatement.executeUpdate();
+                    try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
+                        String sql = "CREATE TABLE " + newName + " (id SERIAL PRIMARY KEY, question VARCHAR(255), answer VARCHAR(255))";
+                        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                            preparedStatement.executeUpdate();
+                        }
+                        System.out.println("Table '" + newName + "' created successfully.");
+                        
+                        String response = "{\"status\": \"success\", \"message\": \"Table '" + newName + "' created successfully.\"}";
+
+                        exchange.getResponseHeaders().set("Content-Type", "application/json");
+                        exchange.sendResponseHeaders(200, response.getBytes().length);
+                        try (OutputStream os = exchange.getResponseBody()) {
+                            os.write(response.getBytes());
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        exchange.sendResponseHeaders(500, 0);  
                     }
-                    System.out.println("Table '" + newName + "' created successfully.");
-
-                    
-                    String response = "{\"status\": \"success\", \"message\": \"Table '" + newName + "' created successfully.\"}";
-                    exchange.sendResponseHeaders(200, response.getBytes().length);
-                    try (OutputStream os = exchange.getResponseBody()) {
-                        os.write(response.getBytes());
-                    }
-
-
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    exchange.sendResponseHeaders(500, 0);  
-                }
-
                 } catch (IOException e) {
                     e.printStackTrace();
                     exchange.sendResponseHeaders(400, 0);  
-                    
                 }
             }
         }
