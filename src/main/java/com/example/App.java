@@ -74,6 +74,7 @@ public class App
             String[] uriParts = uri.split("/");
             String tableName = uriParts[uriParts.length - 1]; 
 
+
             try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
       
                 String sql = "SELECT * FROM " + tableName;
@@ -82,9 +83,8 @@ public class App
                 try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
                 ResultSet resultSet = preparedStatement.executeQuery()) {
 
-       
+                    
                 String jsonResponse = convertResultSetToJson(resultSet);
-
      
                 exchange.sendResponseHeaders(200, jsonResponse.length());
                 try (OutputStream os = exchange.getResponseBody()) {
@@ -129,6 +129,7 @@ public class App
         }
     
         response.append("]");
+
     
         return response.toString();
     }
@@ -193,7 +194,6 @@ public class App
                  
                     String[] pathParts = exchange.getRequestURI().getPath().split("/");
                     String tableName = pathParts[pathParts.length - 1]; 
-                    
                     
                     InputStream requestBody = exchange.getRequestBody();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody));
