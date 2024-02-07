@@ -3,6 +3,8 @@ package com.example;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
@@ -12,6 +14,10 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.Properties;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -41,6 +47,7 @@ public class App
             HttpServer server = HttpServer.create(new InetSocketAddress(8082), 0);
             server.createContext("/hello", new MyHandler());
             server.createContext("/read", new ReadHandler());
+            server.createContext("/create", new CreateHandler());   
             server.start();
             System.out.println("Server started on port 8082");
         } catch (IOException e) {
@@ -127,5 +134,54 @@ public class App
     
     }
 
+    static class CreateHandler implements HttpHandler {
+        @Override 
+        public void handle(HttpExchange exchange) throws IOException {
+            if("POST".equals(exchange.getRequestMethod())) {
+                try {
+                    // Extract data from the request body
+                    InputStream requestBody = exchange.getRequestBody();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(requestBody));
+                    String line;
+                    StringBuilder requestBodyContent = new StringBuilder();
+                    while ((line = reader.readLine()) != null) {
+                        requestBodyContent.append(line);
+                    }
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    JsonNode requestData = objectMapper.readTree(requestBodyContent.toString());
+                    String newName = requestData.get("flash_cards_name").asText();
+                    
+
+                
+                    // This establishes the connection with the database
+                try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password)) {
+                    
+                    String sql = "CREATE TABLE " + newName + " (id INT PRIMARY KEY, name VARCHAR(255))";
+                    try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                        preparedStatement.executeUpdate();
+                    }
+                    System.out.println("Table '" + newName + "' created successfully.");
+
+                    
+                    String response = "{\"status\": \"success\", \"message\": \"Table '" + newName + "' created successfully.\"}";
+                    exchange.sendResponseHeaders(200, response.getBytes().length);
+                    try (OutputStream os = exchange.getResponseBody()) {
+                        os.write(response.getBytes());
+                    }
+
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    exchange.sendResponseHeaders(500, 0);  
+                }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    exchange.sendResponseHeaders(400, 0);  
+                    
+                }
+            }
+        }
+    }
     }
 
