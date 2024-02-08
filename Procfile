@@ -1,0 +1,1 @@
+web: java -jar my-java-project-1.0-SNAPSHOT.jar
