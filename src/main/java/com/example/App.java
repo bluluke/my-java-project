@@ -1,7 +1,6 @@
 package com.example;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,7 +12,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.Properties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpHandler;
@@ -34,15 +32,6 @@ public class App
         jdbcUrl = dotenv.get("DB_URL");
         username = dotenv.get("DB_USERNAME");
         password = dotenv.get("DB_PASSWORD");
-
-        Properties properties = new Properties();
-        String filePath = "src/main/resources/database.properties";
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            properties.load(reader);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
 
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(8082), 0);
