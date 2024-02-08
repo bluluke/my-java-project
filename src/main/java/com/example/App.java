@@ -1,7 +1,6 @@
 package com.example;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,12 +12,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.Properties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpExchange;
+
+import io.github.cdimascio.dotenv.Dotenv;
 
 public class App 
 {
@@ -27,18 +27,11 @@ public class App
     private static String password;
     public static void main( String[] args )
     {
-        Properties properties = new Properties();
-        String filePath = "src/main/resources/database.properties";
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            properties.load(reader);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
 
-        jdbcUrl = properties.getProperty("db.url");
-        username = properties.getProperty("db.username");
-        password = properties.getProperty("db.password");
+        Dotenv dotenv = Dotenv.load();
+        jdbcUrl = dotenv.get("DB_URL");
+        username = dotenv.get("DB_USERNAME");
+        password = dotenv.get("DB_PASSWORD");
 
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(8082), 0);
@@ -55,6 +48,8 @@ public class App
             e.printStackTrace();
         }
     }
+
+
 
     static class ReadTableHandler implements HttpHandler {
         @Override
