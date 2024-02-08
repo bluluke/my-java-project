@@ -20,6 +20,8 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpExchange;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 public class App 
 {
     private static String jdbcUrl;
@@ -27,6 +29,12 @@ public class App
     private static String password;
     public static void main( String[] args )
     {
+
+        Dotenv dotenv = Dotenv.load();
+        jdbcUrl = dotenv.get("DB_URL");
+        username = dotenv.get("DB_USERNAME");
+        password = dotenv.get("DB_PASSWORD");
+
         Properties properties = new Properties();
         String filePath = "src/main/resources/database.properties";
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
@@ -35,10 +43,6 @@ public class App
             e.printStackTrace();
             return;
         }
-
-        jdbcUrl = properties.getProperty("db.url");
-        username = properties.getProperty("db.username");
-        password = properties.getProperty("db.password");
 
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(8082), 0);
@@ -55,6 +59,8 @@ public class App
             e.printStackTrace();
         }
     }
+
+
 
     static class ReadTableHandler implements HttpHandler {
         @Override
